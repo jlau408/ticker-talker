@@ -1,0 +1,515 @@
+{
+  "name": "ticker-talker",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "Jfe07xY3cWdw8Kew",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Jfe07xY3cWdw8Kew",
+          "cachedResultName": "GetTickers"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {}
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1120,
+        64
+      ],
+      "id": "e604da38-d89c-4c5f-a3e8-cd9074e553ed",
+      "name": "Call 'GetTickers'"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Act as an expert-level financial research analyst. Your task is to analyze recent market events that could explain the stock price movement for the given ticker.\n\nStock Information:\nTicker: {{$json.fields.TickerSymbol}}\nPrice Difference after pulling the most recent two trading days from Alpha Vantage ({{ $json.fields.LastCloseDate }} and {{ $json.fields[\"Last-1CloseDate\"] }}) (Most current closing price {{ $json.fields.LastClosePrice }} vs. the second most current closing price {{ $json.fields[\"Last-1ClosePrice\"] }}): {{ $json.fields.delta }}\nDirection: {{ $json.fields.direction }}\n\nInstructions:\nIf the absolute value of the price difference is greater than $1, search for widely reported news from reputable financial sources (e.g., Bloomberg, The Wall Street Journal, Reuters). Specifically, use the information on www.marketbeat.com/stocks/NASDAQ/{{$json.fields.TickerSymbol}}/news/#goog_rewarded in the section where it references \"Why [Company Name] is Down/Up today\"\nIdentify stories that may have influenced the stock price movement in the direction indicated.\nIgnore any news stories that have not been posted within the last 5 days. \nIf the {{ $json.fields.direction }} is down, you must include the negative sentiment items in the Marketbeat page listed above.\nIf the {{ $json.fields.direction }} is up, you must include the positive sentiment items in the Marketbeat page listed above. \n\nFor each relevant article:\nProvide a 2–3 sentence summary.\nInclude a direct link.\nBriefly explain how the event could affect the stock.\nIf no relevant news is found, clearly state that no meaningful stock-related news was identified.\n\nOutput Requirements:\nProvide the output in html with bold headings, clickable links, and spacing.  \nProvide the output as valid HTML only (no Markdown). Use <strong> for bold, <br> or <p> for spacing, <ul><li> for bullet points, and <a href=\"...\"> for links. Do not include any Markdown syntax in the response.\nAdd two empty lines between major headings for easier readability. \nStart with a brief summary of the price movement using the data provided.\nThen list each relevant news item with summary, link, and impact explanation.\nPresent the information as a bulleted list, with each new bullet point on a new line.\nUse Markdown numbers, bullet points (*) or hyphens (-) and ensure each point is a separate line.\nKeep the entire response concise, factual, and focused on stock-price relevance.",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "If you are not able to find any news stories or are not able to determine the cause, simply state this."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        2224,
+        64
+      ],
+      "id": "70703622-6640-47ca-8bb9-c28a0c944b15",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5-search-api",
+          "mode": "list",
+          "cachedResultName": "gpt-5-search-api"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2224,
+        240
+      ],
+      "id": "1ca7c8c6-998a-41e1-b781-ffc881b3e706",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "InsertYourCredentials",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "InsertYourEmail@gmail.com",
+        "subject": "Your Stock Watcher Automated Report",
+        "message": "=Hello!\n\n\n{{ $json.text }}\n\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2560,
+        64
+      ],
+      "id": "de91b9c6-1b99-4fcf-a61f-9dbee4431969",
+      "name": "Send a message",
+      "webhookId": "9ec268b3-947a-42df-9817-26782920f7ea",
+      "alwaysOutputData": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "InsertYourCredentials",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 14,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        896,
+        64
+      ],
+      "id": "089d5790-bda6-4cfe-9cd2-2ad16c426f5b",
+      "name": "Run at 2:30pm PT",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "url": "=https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={{ $json.tickerSymbol }}&apikey=InsertYourCredentials",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1568,
+        64
+      ],
+      "id": "280ba371-6c81-4ae8-a625-8a0dca397602",
+      "name": "HTTP Request:Alpha Vantage",
+      "executeOnce": false,
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "InsertYourCredentials",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst tickerSymbols = items.map((item) => ({\n  json: { tickerSymbol: item?.json?.TickerSymbol },\n}));\nreturn tickerSymbols;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        64
+      ],
+      "id": "755fa69e-c0d7-459f-8e40-11a6855f69ca",
+      "name": "[Code] Extract stock ticker symbol",
+      "notesInFlow": false,
+      "notes": "This step parses out just the stock ticker symbol to be able to pass it to the next step."
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Get Alpha Vantage response\nconst httpRequest = $('HTTP Request:Alpha Vantage').item.json;\nconst timeSeries = httpRequest?.[\"Time Series (Daily)\"] || {};\nconst symbol = httpRequest?.[\"Meta Data\"]?.[\"2. Symbol\"] || null;\n\n// Step 1: Get all dates sorted newest → oldest\nconst dates = Object.keys(timeSeries).sort((a, b) => new Date(b) - new Date(a));\n\n// Step 2: Most recent & second most recent trading days\nconst lastDateRaw = dates[0] || null;\nconst lastMinus1DateRaw = dates[1] || null;\n\n// Step 3: Convert to full ISO datetime (Airtable-friendly)\nconst toAirtableDate = (dateStr) => {\n  if (!dateStr) return null;\n  return new Date(dateStr + \"T00:00:00.000Z\").toISOString();\n};\n\nconst lastDate = toAirtableDate(lastDateRaw);\nconst lastMinus1Date = toAirtableDate(lastMinus1DateRaw);\n\n// Step 4: Extract close prices as numbers\nconst lastClosePrice = lastDateRaw ? parseFloat(timeSeries[lastDateRaw][\"4. close\"]) : null;\nconst lastMinus1ClosePrice = lastMinus1DateRaw ? parseFloat(timeSeries[lastMinus1DateRaw][\"4. close\"]) : null;\n\n// Step 5: Compute delta and direction\nlet delta = null;\nlet direction = null;\n\nif (lastClosePrice !== null && lastMinus1ClosePrice !== null) {\n  delta = lastClosePrice - lastMinus1ClosePrice;\n\n  if (delta > 0) direction = \"up\";\n  else if (delta < 0) direction = \"down\";\n  else direction = \"unchanged\";\n}\n\n// Step 6: Return Airtable-safe fields\nreturn {\n  json: {\n    symbol,\n    LastCloseDate: lastDate,          // ISO formatted date\n    LastClosePrice: lastClosePrice,\n    \"Last-1CloseDate\": lastMinus1Date, // ISO formatted date\n    \"Last-1ClosePrice\": lastMinus1ClosePrice,\n    delta,\n    direction\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        64
+      ],
+      "id": "ec237d39-0a30-4a0b-8779-4070afe1cfd9",
+      "name": "[Code] Get closing prices and delta"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "YourBase",
+          "mode": "list",
+          "cachedResultName": "InsertYourAirtableBase",
+          "cachedResultUrl": "https://airtable.com/YourBase"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YourTable",
+          "mode": "list",
+          "cachedResultName": "InsertYourTable",
+          "cachedResultUrl": "https://airtable.com/YourBase/YourTable"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "TickerSymbol": "={{ $json.symbol }}",
+            "delta": "={{ $json.delta }}",
+            "Last-1ClosePrice": "={{ $json[\"Last-1ClosePrice\"] }}",
+            "LastClosePrice": "={{ $json.LastClosePrice }}",
+            "LastCloseDate": "={{ $json.LastCloseDate }}",
+            "Last-1CloseDate": "={{ $json[\"Last-1CloseDate\"] }}",
+            "direction": "={{ $json.direction }}"
+          },
+          "matchingColumns": [
+            "TickerSymbol"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "TickerSymbol",
+              "displayName": "TickerSymbol",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "CompanyName",
+              "displayName": "CompanyName",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Sector",
+              "displayName": "Sector",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Technology",
+                  "value": "Technology"
+                },
+                {
+                  "name": "Healthcare",
+                  "value": "Healthcare"
+                },
+                {
+                  "name": "Financials",
+                  "value": "Financials"
+                },
+                {
+                  "name": "Consumer Discretionary",
+                  "value": "Consumer Discretionary"
+                },
+                {
+                  "name": "Consumer Staples",
+                  "value": "Consumer Staples"
+                },
+                {
+                  "name": "Energy",
+                  "value": "Energy"
+                },
+                {
+                  "name": "Industrials",
+                  "value": "Industrials"
+                },
+                {
+                  "name": "Materials",
+                  "value": "Materials"
+                },
+                {
+                  "name": "Real Estate",
+                  "value": "Real Estate"
+                },
+                {
+                  "name": "Utilities",
+                  "value": "Utilities"
+                },
+                {
+                  "name": "Communication Services",
+                  "value": "Communication Services"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Exchange",
+              "displayName": "Exchange",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "NASDAQ",
+                  "value": "NASDAQ"
+                },
+                {
+                  "name": "NYSE",
+                  "value": "NYSE"
+                },
+                {
+                  "name": "AMEX",
+                  "value": "AMEX"
+                },
+                {
+                  "name": "Other",
+                  "value": "Other"
+                }
+              ],
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "LastClosePrice",
+              "displayName": "LastClosePrice",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "LastCloseDate",
+              "displayName": "LastCloseDate",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Last-1ClosePrice",
+              "displayName": "Last-1ClosePrice",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Last-1CloseDate",
+              "displayName": "Last-1CloseDate",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "delta",
+              "displayName": "delta",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "direction",
+              "displayName": "direction",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        2032,
+        64
+      ],
+      "id": "5028644d-2af0-4598-9bb3-4d86f6b23467",
+      "name": "Update AirTable",
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "InsertYourCredentials",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Call 'GetTickers'": {
+      "main": [
+        [
+          {
+            "node": "[Code] Extract stock ticker symbol",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run at 2:30pm PT": {
+      "main": [
+        [
+          {
+            "node": "Call 'GetTickers'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request:Alpha Vantage": {
+      "main": [
+        [
+          {
+            "node": "[Code] Get closing prices and delta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Code] Extract stock ticker symbol": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request:Alpha Vantage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Code] Get closing prices and delta": {
+      "main": [
+        [
+          {
+            "node": "Update AirTable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update AirTable": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "e7a47bdf-c552-4bd1-a561-13c624b59999",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5e3c24df62c209ff9e7f22e96701c349b65e03e46011c64c679cfbe8547d0050"
+  },
+  "id": "YGMDPw6UuITzYoxE",
+  "tags": []
+}
