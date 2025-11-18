@@ -1,0 +1,108 @@
+{
+  "name": "GetTickers",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": []
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        16
+      ],
+      "id": "6a04da13-ae47-49cf-bd21-0749990eaaee",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "YourAirtableBaseID",
+          "mode": "list",
+          "cachedResultName": "InsertYourBase",
+          "cachedResultUrl": "https://airtable.com/YourAirtableBaseID"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YourAirtabletableID",
+          "mode": "list",
+          "cachedResultName": "InsertYourTable",
+          "cachedResultUrl": "https://airtable.com/YourAirtableBaseID/YourAirtabletableID"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        16
+      ],
+      "id": "92e43cc2-a933-4c6f-a01a-a0faf55ef1aa",
+      "name": "Search records",
+      "retryOnFail": false,
+      "executeOnce": false,
+      "alwaysOutputData": true,
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "InsertYourCredentials",
+          "name": "Your Airtable PAT"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -240,
+        16
+      ],
+      "id": "e860ac48-7505-4e2a-8aad-6f4eb2fbb03e",
+      "name": "When Executed by Another Workflow"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Search records": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Search records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "5b3cc054-bcd3-4ae8-bc94-f3a546bf5fe3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5e3c24df62c209ff9e7f22e96701c349b65e03e46011c64c679cfbe8547d0050"
+  },
+  "id": "Jfe07xY3cWdw8Kew",
+  "tags": []
+}
