@@ -1,0 +1,4 @@
+﻿TickerSymbol,CompanyName,Sector,Exchange,LastClosePrice,LastCloseDate,Last-1ClosePrice,Last-1CloseDate,delta,direction
+AMZN,Amazon,Technology,NASDAQ,234.69,11/14/2025,237.58,11/13/2025,-2.89,down
+GILD,Gilead,Healthcare,NASDAQ,125.02,11/14/2025,125.20,11/13/2025,-0.18,down
+GOOG,Google,,,276.98,11/14/2025,279.12,11/13/2025,-2.14,down
